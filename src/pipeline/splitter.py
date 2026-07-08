@@ -1,12 +1,18 @@
 """
 Stage 1: Split a .docx into raw text modules using the ===MODULE=== delimiter.
+Uses python-docx to extract text directly from paragraphs and table cells.
 """
 
 from __future__ import annotations
 
-import subprocess
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass
 from pathlib import Path
+
+from docx import Document
+from docx.document import Document as DocumentType
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 
 DELIMITER = "===MODULE==="
 
@@ -15,67 +21,59 @@ DELIMITER = "===MODULE==="
 class RawModule:
     index: int
     text: str
-    lines: list[str] = field(default_factory=list)
 
-    def __post_init__(self):
-        if not self.lines:
-            self.lines = [l for l in self.text.splitlines() if l.strip()]
+
+def _iter_blocks(doc: DocumentType):
+    """Yield top-level paragraphs and tables in document order."""
+    for block in doc.element.body:
+        tag = block.tag.split("}")[-1]
+        if tag == "p":
+            yield Paragraph(block, doc)
+        elif tag == "tbl":
+            yield Table(block, doc)
 
 
 def _docx_to_text(docx_path: Path) -> str:
-    """Convert .docx to plain text via pandoc."""
-    result = subprocess.run(
-        ["pandoc", "-t", "plain", "--wrap=none", str(docx_path)],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout
+    """Extract plain text from paragraphs and table cells in document order."""
+    doc = Document(str(docx_path))
+    chunks: list[str] = []
+
+    for block in _iter_blocks(doc):
+        if isinstance(block, Paragraph):
+            t = block.text.strip()
+            if t:
+                chunks.append(t)
+        elif isinstance(block, Table):
+            for row in block.rows:
+                for cell in row.cells:
+                    for para in cell.paragraphs:
+                        t = para.text.strip()
+                        if t:
+                            chunks.append(t)
+
+    return "\n".join(chunks)
+
+
+def _clean(text: str) -> str:
+    """Collapse runs of whitespace into single spaces."""
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def split_document(docx_path: Path) -> list[RawModule]:
-    """
-    Parse a .docx file and split it into RawModules on ===MODULE=== delimiters.
-
-    Args:
-        docx_path: Path to the .docx file.
-
-    Returns:
-        List of RawModule, one per section between delimiters.
-        The preamble before the first delimiter (if any) is discarded.
-
-    Raises:
-        FileNotFoundError: if docx_path does not exist.
-        subprocess.CalledProcessError: if pandoc fails.
-        ValueError: if no delimiter found in document.
-    """
     if not docx_path.exists():
         raise FileNotFoundError(docx_path)
-
-    raw_text = _docx_to_text(docx_path)
-    return split_text(raw_text)
+    return split_text(_docx_to_text(docx_path))
 
 
 def split_text(text: str) -> list[RawModule]:
-    """
-    Split plain text on ===MODULE=== delimiters.
-    Exposed separately so it can be tested without a real .docx.
-
-    Raises:
-        ValueError: if no delimiter found.
-    """
     parts = text.split(DELIMITER)
-
-    # parts[0] is the preamble before the first delimiter — discard
-    module_parts = parts[1:]
+    module_parts = parts
 
     if not module_parts:
         raise ValueError(f"No '{DELIMITER}' delimiter found in document.")
 
-    modules = []
-    for i, part in enumerate(module_parts):
-        stripped = part.strip()
-        if stripped:
-            modules.append(RawModule(index=i, text=stripped))
-
-    return modules
+    return [
+        RawModule(index=i, text=_clean(part))
+        for i, part in enumerate(module_parts)
+        if part.strip()
+    ]
