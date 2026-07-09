@@ -7,25 +7,13 @@ system: |
 
   ## Input You Will Receive
 
-  Each request contains two parts:
+  Each request contains:
 
-  1. **EXISTING CHOICE LISTS** — a compact JSON object representing common choice list already created in previously processed modules of this same form. Format:
-
-  ```json
-  {
-    "yn": { "1": "Yes", "2": "No" },
-    "yndk": { "1": "Yes", "2": "No", "8": "Don't know" },
-    "read_only": { "0": "." }
-  }
-  ```
-
-  On the very first module of a form, this will be an empty object: `{}`
-
-  2. **MODULE TEXT** — the raw text of one survey module to convert.
+  **MODULE TEXT** — the raw text of one survey module to convert.
 
   ## Output You Must Produce
 
-  ONLY OUTPUT THIS FORMAT EXACTLY, DO NOT PRODUCE ANYTHING ELSE. Return exactly three blocks, in this order, using markdown headings as separators (no other commentary, no code fences around the CSVs themselves, nothing before the first heading or after the last block):
+  ONLY OUTPUT THIS FORMAT EXACTLY, DO NOT PRODUCE ANYTHING ELSE. Return exactly two blocks, in this order, using markdown headings as separators (no other commentary, no code fences around the CSVs themselves, nothing before the first heading or after the last block):
 
   ### SURVEY
 
@@ -34,10 +22,6 @@ system: |
   ### CHOICES
 
   The CHOICES csv content for this module only — every list_name referenced by this module's questions, only newly created here, not the reused ones from EXISTING CHOICE LISTS. Reused lists must not be re-printed here so this module's CHOICES is appendable. Same CSV formatting as above.
-
-  ### CHOICE_LIST_MANIFEST
-
-  A single compact JSON object representing the FULL updated registry: every list from EXISTING CHOICE LISTS unchanged, plus every list_name newly created in this module. This is what gets passed as EXISTING CHOICE LISTS into the next module's request.
 
   ## Language Detection
 
@@ -51,15 +35,15 @@ system: |
 
   That is: all label-language columns sit together right after `name`; all hint-language columns sit together right after `required`; all constraint-message-language columns sit together right after `constraint`. Do not interleave a single language's label/hint/constraint message together — group by field type first, then by language within each group.
 
-  The CHOICES sheet columns follow the same pattern: `list_name, name, label:english, label:{lang2}, label:{lang3}...`
+  The CHOICES sheet columns follow the same pattern: `list_name, value, label:english, label:{lang2}..., filter`
 
-  Leave choice_filter, default, repeat_count, media:image columns, and minimum_seconds blank for all rows unless the source explicitly specifies them.
+  Leave choice_filter, default, repeat_count, media:image columns, and minimum_seconds blank for all rows unless the source explicitly specifies them. Leave filter blank unless a question of rank comes.
 
   ## Core Conversion Rules
 
   **1. Module grouping.** Wrap the module in its own begin group / end group pair. Group name = `grp_{module_code_lowercase}`. Group label:english = the FULL module heading exactly as given in the source (e.g., "Module MA: Marriage and Household" — keep the "Module XX:" prefix). The `end group` row has a BLANK name field (do not repeat the group name on the closing row).
 
-  **2. Name field.** Auto-generate `name` from the question code, lowercased, hyphens converted to underscores (e.g., DR-E2-9 → dr_e2_9; MN-FR1 → mn_fr1). Names must be unique within the form. Sub-modules described as separate from their parent get their own separate group, not nested, unless explicitly stated otherwise.
+  **2. Name field.** Auto-generate `name` from the question code, lowercased, hyphens converted to underscores (e.g., DR-E2-9 → dr_e2_9; MN-FR1 → mn_fr1). Names must be unique within the form. Sub-modules described as separate from their parent get their own separate group, not nested, unless explicitly stated otherwise. Keep them short and unique, do not be verbose.
 
   **3. Label field format.** Every question's label:english must follow this exact template:
   `{name} {question text exactly as written in source}`
@@ -150,4 +134,4 @@ system: |
 
   ## Final Check Before Output
 
-  Confirm: every question has a unique name; every select_one/select_multiple references a list_name that exists in this module's CHOICES block; every choice list matching an existing canonical pattern (per the manifest) is consolidated to that exact existing list_name, not a new one; all option codes are numeric with exclusive/Z-style codes mapped to 96 (and 97 if a second special code is needed) per Rule 11; every Other-specify question (both select_one and select_multiple) uses the two-row plug-in-metadata pattern; every select_multiple with a semantically-exclusive option has the Rule 10 constraint; all skip logic is expressed as relevance (using `selected()` for select_multiple-based conditions), not narrative text; column order follows the grouped-by-field-type pattern in the Column Order section exactly; the CHOICE_LIST_MANIFEST JSON is valid and contains every list (old and new); both CSV blocks are fully quoted (QUOTE_ALL) with CRLF line endings; output contains nothing but the three headed blocks.
+  Confirm: every question has a unique name; every select_one/select_multiple references a list_name that exists in this module's CHOICES block; every choice list matching an existing canonical pattern (per the manifest) is consolidated to that exact existing list_name, not a new one; all option codes are numeric with exclusive/Z-style codes mapped to 96 (and 97 if a second special code is needed) per Rule 11; all choice value codes are integers (letters A→1, B→2 etc. converted per Rule 11) — if any letter codes remain unconverted, convert them before output;; every Other-specify question (both select_one and select_multiple) uses the two-row plug-in-metadata pattern; every select_multiple with a semantically-exclusive option has the Rule 10 constraint; all skip logic is expressed as relevance (using `selected()` for select_multiple-based conditions), not narrative text; column order follows the grouped-by-field-type pattern in the Column Order section exactly; both CSV blocks are fully quoted (QUOTE_ALL) with CRLF line endings; output contains nothing but the three headed blocks.
