@@ -2,24 +2,21 @@
 Stage 2: Send each RawModule to the LLM and parse the response
 into ModuleOutput dataclasses.
 
-LLM response format (three markdown-headed blocks):
+LLM response format (two markdown-headed blocks):
     ### SURVEY
     <CSV>
     ### CHOICES
     <CSV>
-    ### CHOICE_LIST_MANIFEST
-    <JSON>
 """
 
 from __future__ import annotations
 
 import csv
 import io
-import json
 import re
 from pathlib import Path
-import yaml
 
+import yaml
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -32,7 +29,7 @@ log = get_logger(__name__)
 DEFAULT_MODEL = "gemini-2.5-flash-lite"
 
 BLOCK_PATTERN = re.compile(
-    r"###\s*SURVEY\s*(.*?)###\s*CHOICES\s*(.*?)###\s*CHOICE_LIST_MANIFEST\s*(.*)",
+    r"###\s*SURVEY\s*(.*?)###\s*CHOICES\s*(.*?)$",
     re.DOTALL | re.IGNORECASE,
 )
 
@@ -42,7 +39,6 @@ BLOCK_PATTERN = re.compile(
 # ---------------------------------------------------------------------------
 
 def _load_prompt(prompt_path: Path) -> str:
-    import yaml
     data = yaml.safe_load(prompt_path.read_text(encoding="utf-8"))
     return data["system"]
 
@@ -64,21 +60,20 @@ def _call_llm(llm: ChatGoogleGenerativeAI, system_prompt: str, user_prompt: str)
 # Response parsing
 # ---------------------------------------------------------------------------
 
-def _parse_blocks(response: str) -> tuple[str, str, str]:
+def _parse_blocks(response: str) -> tuple[str, str]:
     match = BLOCK_PATTERN.search(response)
     if not match:
         raise ValueError(
-            "LLM response did not contain expected "
-            "### SURVEY / ### CHOICES / ### CHOICE_LIST_MANIFEST blocks."
+            "LLM response did not contain expected ### SURVEY / ### CHOICES blocks."
         )
-    return match.group(1).strip(), match.group(2).strip(), match.group(3).strip()
+    return match.group(1).strip(), match.group(2).strip()
 
 
 def _parse_survey_csv(csv_text: str) -> list[SurveyRow]:
     reader = csv.DictReader(io.StringIO(csv_text))
     rows = []
     for raw in reader:
-        row = {k.strip(): (v or "").strip() for k, v in raw.items()}
+        row = {k.strip(): (v or "").strip() for k, v in raw.items() if k is not None}
 
         labels, hints, constraint_messages, media_images = {}, {}, {}, {}
         for key, val in row.items():
@@ -118,41 +113,43 @@ def _parse_choices_csv(csv_text: str) -> list[ChoiceRow]:
     reader = csv.DictReader(io.StringIO(csv_text))
     rows = []
     for raw in reader:
-        row = {k.strip(): (v or "").strip() for k, v in raw.items()}
-        if not row.get("list_name") and not row.get("name"):
+        row = {k.strip(): (v or "").strip() for k, v in raw.items() if k is not None}
+        if not row.get("list_name") and not row.get("value"):
             continue
         labels = {k: v for k, v in row.items() if k.lower().startswith("label:")}
+        raw_value = row.get("value", "").strip()
+        raw_filter = row.get("filter", "").strip()
+        try:
+            value = int(raw_value)
+        except ValueError:
+            log.warning(f"Non-numeric value '{raw_value}' in choices for list '{row.get('list_name')}' — skipping row.")
+            continue
+        try:
+            filter_val = int(raw_filter) if raw_filter else None
+        except ValueError:
+            log.warning(f"Non-numeric filter '{raw_filter}' in choices — setting to None.")
+            filter_val = None
         rows.append(ChoiceRow(
             list_name=row.get("list_name", ""),
-            name=row.get("name", ""),
+            value=value,
+            filter=filter_val,
             labels=labels,
         ))
     return rows
-
-
-def _parse_manifest(json_text: str) -> dict:
-    try:
-        return json.loads(json_text)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"CHOICE_LIST_MANIFEST is not valid JSON: {e}") from e
 
 
 # ---------------------------------------------------------------------------
 # Per-module call
 # ---------------------------------------------------------------------------
 
-def _build_user_prompt(module: RawModule, manifest: dict) -> str:
-    return (
-        f"EXISTING CHOICE LISTS:\n{json.dumps(manifest, ensure_ascii=False)}\n\n"
-        f"MODULE TEXT:\n{module.text}"
-    )
+def _build_user_prompt(module: RawModule) -> str:
+    return f"MODULE TEXT:\n{module.text}"
 
 
 def parse_module(
     module: RawModule,
     llm: ChatGoogleGenerativeAI,
     system_prompt: str,
-    manifest: dict,
 ) -> ModuleOutput:
     """
     Send one RawModule to the LLM and return a parsed ModuleOutput.
@@ -168,20 +165,18 @@ def parse_module(
                 continue
     """
     log.info(f"Parsing module {module.index}...")
-    user_prompt = _build_user_prompt(module, manifest)
+    user_prompt = _build_user_prompt(module)
     response = _call_llm(llm, system_prompt, user_prompt)
 
-    survey_csv, choices_csv, manifest_json = _parse_blocks(response)
+    survey_csv, choices_csv = _parse_blocks(response)
     survey_rows = _parse_survey_csv(survey_csv)
     choice_rows = _parse_choices_csv(choices_csv)
-    updated_manifest = _parse_manifest(manifest_json)
 
     log.info(f"Module {module.index}: {len(survey_rows)} survey rows, {len(choice_rows)} choice rows.")
     return ModuleOutput(
         index=module.index,
         survey_rows=survey_rows,
         choice_rows=choice_rows,
-        manifest=updated_manifest,
     )
 
 
@@ -196,12 +191,12 @@ def parse_all_modules(
     model: str = DEFAULT_MODEL,
 ) -> list[ModuleOutput]:
     """
-    Loop over all modules, chaining the manifest between calls.
+    Loop over all modules independently (no manifest chaining).
 
     Args:
         modules: Output of splitter.split_document().
         api_key: Gemini API key.
-        prompt_path: Path to prompts/parse_module.txt.
+        prompt_path: Path to prompts/parse_module.yaml.
         model: LLM model string. Defaults to gemini-2.5-flash-lite.
 
     Returns:
@@ -214,12 +209,10 @@ def parse_all_modules(
     llm = ChatGoogleGenerativeAI(model=model, google_api_key=api_key)
     system_prompt = _load_prompt(prompt_path)
 
-    manifest: dict = {}
     outputs: list[ModuleOutput] = []
 
     for module in modules:
-        output = parse_module(module, llm, system_prompt, manifest)
-        manifest = output.manifest
+        output = parse_module(module, llm, system_prompt)
         outputs.append(output)
 
     log.info(f"Parsed {len(outputs)} modules successfully.")

@@ -24,17 +24,18 @@ class SurveyRow:
     publishable: str
 
     # Language-dependent dynamic fields
-    labels: dict[str, str] = field(default_factory=dict)             # "label:english" -> "..."
-    hints: dict[str, str] = field(default_factory=dict)              # "hint:english" -> "..."
+    labels: dict[str, str] = field(default_factory=dict)              # "label:english" -> "..."
+    hints: dict[str, str] = field(default_factory=dict)               # "hint:english" -> "..."
     constraint_messages: dict[str, str] = field(default_factory=dict) # "constraint message:english" -> "..."
-    media_images: dict[str, str] = field(default_factory=dict)       # "media:image:english" -> "..."
+    media_images: dict[str, str] = field(default_factory=dict)        # "media:image:english" -> "..."
 
 
 @dataclass
 class ChoiceRow:
     list_name: str
-    name: str
-    labels: dict[str, str] = field(default_factory=dict)             # "label:english" -> "..."
+    value: int
+    filter: int | None
+    labels: dict[str, str] = field(default_factory=dict)              # "label:english" -> "..."
 
 
 @dataclass
@@ -42,4 +43,3 @@ class ModuleOutput:
     index: int
     survey_rows: list[SurveyRow]
     choice_rows: list[ChoiceRow]
-    manifest: dict  # Full CHOICE_LIST_MANIFEST JSON, passed to next module

@@ -13,7 +13,7 @@ import io
 import os
 from pathlib import Path
 
-from pipeline.parser import parse_module, _load_prompt, _build_user_prompt, _call_llm, _parse_blocks, _parse_survey_csv, _parse_choices_csv, _parse_manifest
+from pipeline.parser import parse_module, _load_prompt
 from pipeline.splitter import split_document
 from utils.logger import get_logger, setup_logging
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -136,10 +136,9 @@ if __name__ == "__main__":
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
     system_prompt = _load_prompt(prompt_path)
 
-    output = parse_module(module, llm, system_prompt, manifest={})
+    output = parse_module(module, llm, system_prompt)
 
     survey_csv, choices_csv = module_output_to_csv(output)
 
     log.info("=== SURVEY CSV ===\n" + survey_csv)
     log.info("=== CHOICES CSV ===\n" + choices_csv)
-    log.info("=== MANIFEST ===\n" + str(output.manifest))
