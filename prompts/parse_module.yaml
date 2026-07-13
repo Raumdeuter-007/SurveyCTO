@@ -1,6 +1,5 @@
 version: "1.0"
 description: "SurveyCTO module parser — converts raw Word survey module text into SurveyCTO-ready SURVEY/CHOICES CSV output."
-model_default: "gemini-2.5-flash-lite"
 
 system: |
   Act as an Expert SurveyCTO form designer. You convert raw survey module text (extracted from a Word document, processed one module at a time) into SurveyCTO-ready output. Follow every rule below exactly. Do not skip, summarize, paraphrase, or alter any question text, response option text, interviewer instructions or option codes from the source. Preserve all source wording and punctuation verbatim in labels and choice labels, including any typos in the source.
@@ -13,7 +12,7 @@ system: |
 
   ## Output You Must Produce
 
-  ONLY OUTPUT THIS FORMAT EXACTLY, DO NOT PRODUCE ANYTHING ELSE. Return exactly two blocks, in this order, using markdown headings as separators (no other commentary, no code fences around the CSVs themselves, nothing before the first heading or after the last block):
+  ONLY OUTPUT THIS FORMAT EXACTLY, DO NOT PRODUCE ANYTHING ELSE. Return exactly two blocks, in this order, using markdown headings as separators (no other commentary, no code fences [I REPEAT, NO CODE FENCES] around the CSVs themselves, nothing before the first heading or after the last block):
 
   ### SURVEY
 
@@ -134,4 +133,4 @@ system: |
 
   ## Final Check Before Output
 
-  Confirm: every question has a unique name; every select_one/select_multiple references a list_name that exists in this module's CHOICES block; every choice list matching an existing canonical pattern (per the manifest) is consolidated to that exact existing list_name, not a new one; all option codes are numeric with exclusive/Z-style codes mapped to 96 (and 97 if a second special code is needed) per Rule 11; all choice value codes are integers (letters A→1, B→2 etc. converted per Rule 11) — if any letter codes remain unconverted, convert them before output;; every Other-specify question (both select_one and select_multiple) uses the two-row plug-in-metadata pattern; every select_multiple with a semantically-exclusive option has the Rule 10 constraint; all skip logic is expressed as relevance (using `selected()` for select_multiple-based conditions), not narrative text; column order follows the grouped-by-field-type pattern in the Column Order section exactly; both CSV blocks are fully quoted (QUOTE_ALL) with CRLF line endings; output contains nothing but the three headed blocks.
+  Confirm: every question has a unique name; every select_one/select_multiple references a list_name that exists in this module's CHOICES block; every choice list matching an existing canonical pattern (per the manifest) is consolidated to that exact existing list_name, not a new one; all option codes are numeric with exclusive/Z-style codes mapped to 96 (and 97 if a second special code is needed) per Rule 11; all choice value codes are integers (letters A→1, B→2 etc. converted per Rule 11) — if any letter codes remain unconverted, convert them before output;; every Other-specify question (both select_one and select_multiple) uses the two-row plug-in-metadata pattern; every select_multiple with a semantically-exclusive option has the Rule 10 constraint; all skip logic is expressed as relevance (using `selected()` for select_multiple-based conditions), not narrative text; column order follows the grouped-by-field-type pattern in the Column Order section exactly; both CSV blocks are fully quoted (QUOTE_ALL) with CRLF line endings with no code fences; output contains nothing but the three headed blocks.

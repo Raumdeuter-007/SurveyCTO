@@ -118,7 +118,6 @@ def _write_survey_sheet(ws, outputs: list[ModuleOutput], headers: list[str]) -> 
     for output in outputs:
         for row in output.survey_rows:
             ws.append(_survey_row_to_list(row, headers))
-        ws.append([""] * len(headers))  # blank separator between modules
 
     # for row in fixed.survey_end:
     #     ws.append(_survey_row_to_list(row, headers))
@@ -208,6 +207,8 @@ def compile_outputs(
 
     ws_settings = wb.create_sheet("settings")
     _write_settings_sheet(ws_settings)
+    
+    del wb[wb.sheetnames[0]]
 
     wb.save(out_path)
     log.info(f"Compiled {len(outputs)} modules → {out_path}")

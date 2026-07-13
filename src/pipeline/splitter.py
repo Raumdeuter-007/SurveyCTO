@@ -67,7 +67,7 @@ def split_document(docx_path: Path) -> list[RawModule]:
 
 def split_text(text: str) -> list[RawModule]:
     parts = text.split(DELIMITER)
-    module_parts = parts
+    module_parts = parts[1:]
 
     if not module_parts:
         raise ValueError(f"No '{DELIMITER}' delimiter found in document.")
