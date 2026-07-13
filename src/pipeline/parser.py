@@ -150,6 +150,7 @@ def parse_module(
     module: RawModule,
     llm: ChatGoogleGenerativeAI,
     system_prompt: str,
+    debug: bool = False,
 ) -> ModuleOutput:
     """
     Send one RawModule to the LLM and return a parsed ModuleOutput.
@@ -167,6 +168,8 @@ def parse_module(
     log.info(f"Parsing module {module.index}...")
     user_prompt = _build_user_prompt(module)
     response = _call_llm(llm, system_prompt, user_prompt)
+    if debug:
+        log.info("Response: %s", response)
 
     survey_csv, choices_csv = _parse_blocks(response)
     survey_rows = _parse_survey_csv(survey_csv)
@@ -189,6 +192,7 @@ def parse_all_modules(
     api_key: str,
     prompt_path: Path,
     model: str = DEFAULT_MODEL,
+    debug: bool = False,
 ) -> list[ModuleOutput]:
     """
     Loop over all modules independently (no manifest chaining).
@@ -212,7 +216,13 @@ def parse_all_modules(
     outputs: list[ModuleOutput] = []
 
     for module in modules:
-        output = parse_module(module, llm, system_prompt)
+        try:
+            output = parse_module(module, llm, system_prompt, debug=debug)
+        except (ValueError, Exception) as e:
+            log.error(f"Skipping module {module.index}: {e}")
+            continue
+        if debug:
+            log.info(f"Module Output: {output}")
         outputs.append(output)
 
     log.info(f"Parsed {len(outputs)} modules successfully.")
