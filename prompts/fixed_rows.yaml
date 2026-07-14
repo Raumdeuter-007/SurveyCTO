@@ -1,0 +1,309 @@
+# Fixed rows prepended/appended to the survey sheet and prepended to the choices sheet.
+# Labels are stored by language key. At compile time, only keys matching the form's
+# language list are emitted; unmatched languages get blank values.
+#
+# Field order per row mirrors the survey sheet column order:
+#   type, name, label, appearance, relevance, required, hint,
+#   constraint, constraint_message, calculation, choice_filter,
+#   read_only, default, repeat_count, media_image,
+#   minimum_seconds, publishable
+#
+# Omitted optional fields default to null (empty cell).
+
+survey_start:
+  - type: start
+    name: starttime
+
+  - type: end
+    name: endtime
+
+  - type: today
+    name: today
+
+  - type: calculate_here
+    name: c_starttime
+    calculation: "once(decimal-date-time(now()))"
+
+  - type: calculate_here
+    name: c_startdate
+    calculation: "once(now())"
+
+  - type: subscriberid
+    name: subscriberid
+
+  - type: deviceid
+    name: deviceid
+
+  - type: username
+    name: username
+
+  - type: simserial
+    name: simserial
+
+  - type: phonenumber
+    name: phonenumber
+
+  - type: calculate
+    name: duration
+    calculation: "duration()"
+
+  - type: caseid
+    name: caseid
+
+  - type: calculate
+    name: id_no
+    calculation: "once(int(random()*900000)+100000)"
+
+  - type: text audit
+    name: txt_audit
+    appearance: "p=100"
+
+  - type: audio audit
+    name: audio_comp
+    appearance: "p=100;s=rsp_consent;d=int_name"
+
+  - type: geopoint
+    name: hidd_GPS
+    labels:
+      urdu: "۔hidd_gps"
+    appearance: background
+    relevance: '${deviceid}!="(web)"'
+
+  - type: calculate
+    name: int_type
+    calculation: '"CAPI"'
+
+  - type: calculate
+    name: cal_hour
+    calculation: 'if(${deviceid}="(web)",once(format-date-time(now(),''%H''))+5,once(format-date-time(now(),''%H'')))'
+
+  - type: select_one read_only
+    name: nhour
+    labels:
+      english: "Warning : Date/Time settings of your device is wrong. \n\nPlease set the time of your device to 24 hours otherwise you may flagged."
+      urdu: "۔انتباہ: آپ کی ڈیوائس کی تاریخ/وقت غلط ہیں۔\n\nبراہ کرم 24 گھنٹے کے فارمیٹ پر سیٹ کریں ورنہ آپ flag ہو سکتے ہیں۔"
+    appearance: custom-baseline-select_one
+    relevance: "${cal_hour}<=7 or ${cal_hour}>=22"
+    required: "yes"
+
+  - type: select_one yn
+    name: rsp_consent
+    labels:
+      english: "Do you agree to participate in survey?"
+      urdu: "۔"
+    appearance: custom-baseline-select_one
+    required: "yes"
+
+survey_end:
+  - type: note
+    name: n_end
+    labels:
+      english: "Thank You for your Time!"
+      urdu: "۔"
+
+  - type: select_one int_team
+    name: int_team
+    labels:
+      english: "Interviewer's Team"
+      urdu: "انٹرویور ٹیم منتخب کریں"
+    appearance: custom-baseline-select_one
+    required: "yes"
+
+  - type: select_one supervisor
+    name: supervisor
+    labels:
+      english: "Supervisor Name"
+      urdu: "سپروائزر منتخب کریں"
+    appearance: custom-baseline-select_one
+    required: "yes"
+    choice_filter: "filter=${int_team}"
+
+  - type: select_one int_name
+    name: int_name
+    labels:
+      english: "Interviewer's Name"
+      urdu: "انٹرویور کا نام منتخب کریں"
+    appearance: custom-baseline-select_one
+    required: "yes"
+    choice_filter: "filter=${supervisor} or filter=0"
+
+  - type: calculate
+    name: c_int_name
+    calculation: 'if(${int_name}=97 or ${int_name}="",${int_name_oth},${int_name})'
+
+  - type: sensor_statistic pct_conversation
+    name: s_pct_conversation
+    labels:
+      urdu: "۔S_pct_conversation"
+
+  - type: sensor_statistic pct_quiet
+    name: s_pct_quiet
+    labels:
+      urdu: "۔S_pct_quiet"
+
+  - type: sensor_statistic pct_moving
+    name: s_pct_moving
+    labels:
+      urdu: "۔S_pct_moving"
+
+  - type: sensor_statistic pct_still
+    name: s_pct_still
+    labels:
+      urdu: "۔S_pct_still"
+
+  - type: sensor_statistic mean_sound_level
+    name: s_mean_sound_level
+    labels:
+      urdu: "۔S_mean_sound_level"
+
+  - type: sensor_statistic min_sound_level
+    name: s_min_sound_level
+    labels:
+      urdu: "۔S_min_sound_level"
+
+  - type: sensor_statistic max_sound_level
+    name: s_max_sound_level
+    labels:
+      urdu: "۔S_max_sound_level"
+
+  - type: sensor_statistic sd_sound_level
+    name: s_sd_sound_level
+    labels:
+      urdu: "۔S_sd_sound_level"
+
+  - type: sensor_statistic mean_sound_pitch
+    name: s_mean_sound_pitch
+    labels:
+      urdu: "۔S_mean_sound_pitch"
+
+  - type: sensor_statistic min_sound_pitch
+    name: s_min_sound_pitch
+    labels:
+      urdu: "۔S_min_sound_pitch"
+
+  - type: sensor_statistic max_sound_pitch
+    name: s_max_sound_pitch
+    labels:
+      urdu: "۔S_max_sound_pitch"
+
+  - type: sensor_statistic sd_sound_pitch
+    name: s_sd_sound_pitch
+    labels:
+      urdu: "۔S_sd_sound_pitch"
+
+  - type: sensor_statistic mean_light_level
+    name: s_mean_light_level
+    labels:
+      urdu: "۔S_mean_light_level"
+
+  - type: sensor_statistic min_light_level
+    name: s_min_light_level
+    labels:
+      urdu: "۔S_min_light_level"
+
+  - type: sensor_statistic max_light_level
+    name: s_max_light_level
+    labels:
+      urdu: "۔S_max_light_level"
+
+  - type: sensor_statistic sd_light_level
+    name: s_sd_light_level
+    labels:
+      urdu: "۔S_sd_light_level"
+
+  - type: sensor_statistic mean_movement
+    name: s_mean_movement
+    labels:
+      urdu: "۔S_mean_movement"
+
+  - type: sensor_statistic min_movement
+    name: s_min_movement
+    labels:
+      urdu: "۔S_min_movement"
+
+  - type: sensor_statistic max_movement
+    name: s_max_movement
+    labels:
+      urdu: "۔S_max_movement"
+
+  - type: sensor_statistic sd_movement
+    name: s_sd_movement
+    labels:
+      urdu: "۔S_sd_movement"
+
+  - type: speed violations count
+    name: speed_violations_cnt
+    labels:
+      urdu: "۔Speed_violations_cnt"
+
+  - type: speed violations list
+    name: speed_violations_list
+    labels:
+      urdu: "۔Speed_violations_list"
+
+  - type: sensor_statistic pct_light_level_between
+    name: s_pct_light_level_btw
+    labels:
+      urdu: "۔S_pct_light_level_btw"
+    appearance: "min=5;max=500"
+
+  - type: sensor_statistic pct_sound_level_between
+    name: s_pct_sound_level_btw
+    labels:
+      urdu: "۔S_pct_sound_level_btw"
+    appearance: "min=0;max=60"
+
+  - type: sensor_statistic pct_movement_between
+    name: s_pct_movement_btw
+    labels:
+      urdu: "۔S_pct_movement_btw"
+    appearance: "min=25;max=65"
+
+  - type: sensor_stream conversation
+    name: s_stream_conversation
+    labels:
+      urdu: "۔S_stream_conversation"
+    appearance: "p=100"
+
+  - type: calculate
+    name: device_info
+    labels:
+      urdu: "۔Device_info"
+    calculation: "device-info()"
+
+  - type: calculate_here
+    name: c_endtime
+    labels:
+      urdu: "۔C_endtime"
+    calculation: "once(format-date-time(now(),'%Y-%b-%e %H:%M:%S'))"
+
+fixed_choices:
+  - list_name: read_only
+    value: 0
+    labels:
+      english: "."
+      urdu: "."
+
+  - list_name: yn1
+    value: 1
+    labels:
+      english: "Yes"
+      urdu: "ہاں"
+
+  - list_name: yn1
+    value: 2
+    labels:
+      english: "No"
+      urdu: "نہیں"
+
+  - list_name: yn1
+    value: 98
+    labels:
+      english: "Don't Know"
+      urdu: "معلوم نہیں (پڑھ کر نہ سُنائیں)"
+
+  - list_name: "5"
+    value: 0
+    labels:
+      english: "."
+      urdu: "."
