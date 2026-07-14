@@ -136,7 +136,16 @@ if __name__ == "__main__":
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
     system_prompt = _load_prompt(prompt_path)
 
-    output = parse_module(module, llm, system_prompt)
+    known_fields: list[str] = []
+    choice_manifest: list[dict] = []
+    output = parse_module(
+        module, 
+        llm, 
+        system_prompt, 
+        languages=['english'], 
+        known_fields=known_fields, 
+        choice_manifest=choice_manifest
+    )
 
     survey_csv, choices_csv = module_output_to_csv(output)
 

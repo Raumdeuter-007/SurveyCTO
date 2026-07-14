@@ -31,7 +31,7 @@ if __name__ == "__main__":
     log.info(f"Found {len(modules)} module(s).")
 
     log.info("=== STAGE 2: PARSING ===")
-    outputs = parse_all_modules(modules, api_key, prompt_path, model='gemini-2.5-flash', debug=True)
+    outputs = parse_all_modules(modules, api_key, prompt_path, model='gemini-2.5-flash-lite', debug=True, languages=['english'])
 
     log.info("=== STAGE 3: COMPILING ===")
     out_path = compile_outputs(outputs, docx_path)
