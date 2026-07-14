@@ -91,7 +91,7 @@ system: |
   ```
 
   - `value` must always be an integer (see Rule 11).
-  - `filter` is an integer or null (see Rule on ranking questions).
+  - `filter` is an integer or null (see Rule 21).
   - Only emit choice lists FIRST DEFINED in this module. Do not re-emit lists that
     appear in CHOICE_MANIFEST. Lists from CHOICE_MANIFEST may be referenced by
     `type` fields (e.g. `select_one yn`) without being re-emitted in `choices`.
@@ -104,16 +104,19 @@ system: |
   - `begin group` label (primary language): the FULL module heading exactly as in source
     (e.g. "Module MA: Marriage and Household" — keep the "Module XX:" prefix).
   - `end group` name: null.
-  - If a module is explicitly gated (e.g. "ask only if DD1=7 or 8"), put the gating
-    condition on the `begin group` row's `relevance`, combined with `${rsp_consent}='1'`
-    via `and`. Each group must always include `${rsp_consent}='1'` in its `relevance`.
-    Do not repeat the gating on every child row unless a child has an ADDITIONAL, more
-    specific condition layered on top.
+  - Every `begin group` row MUST have `${rsp_consent}='1'` in its `relevance`.
+    If the module is explicitly gated (e.g. "ask only if DD1=7 or 8"), combine:
+    `${rsp_consent}='1' and {gating_condition}` on the `begin group` row only.
+  - CRITICAL: `${rsp_consent}='1'` goes EXCLUSIVELY on the `begin group` `relevance`.
+    It must NEVER appear on any child row (questions, calculate fields, nested groups).
+    Child rows carry their own specific skip conditions ONLY — never the consent gate.
 
   **2. Name field.**
-  Auto-generate `name` from the question code: lowercase, hyphens → underscores
-  (e.g. DR-E2-9 → `dr_e2_9`; MN-FR1 → `mn_fr1`). Names must be unique within the
-  form. Sub-modules get their own separate group, not nested, unless explicitly stated.
+  Auto-generate `name` from the raw question code: lowercase, hyphens → underscores
+  (e.g. DR-E2-9 → `dr_e2_9`; MN-FR1 → `mn_fr1`). Use the question code directly —
+  do not append descriptive words, suffixes, or the group name. Names must be concise
+  and unique within the form. Sub-modules get their own separate group, not nested,
+  unless explicitly stated.
 
   **3. Label format.**
   Every question's primary-language label must follow:
@@ -137,7 +140,7 @@ system: |
   | Whole numbers (counts, ages, minutes) | `integer` |
   | Decimal measurements (explicit decimal precision) | `decimal` |
   | Whole-unit precision (e.g. grams instead of kg) | `integer` |
-  | Ranking items ("write 1, 2, 3" against a list) | see Rule: 21 |
+  | Ranking items ("write 1, 2, 3" against a list) | see Rule 21 |
   | Calculated / derived / composite / system fields | `calculate` |
   | Interviewer-observed with discrete options | `select_one {list_name}` or `select_multiple {list_name}` |
   | Required photo per interviewer instruction | `image` |
@@ -155,11 +158,30 @@ system: |
   **7. Relevance (skip logic).**
   Convert plain-English skip instructions into XPath `relevance` expressions using
   `${field_name}` syntax. For `select_multiple`-based conditions, use
-  `selected(${field}, 'code')`. When a relevance condition
-  refers to a field from a prior module, check KNOWN_FIELDS for the exact name and
-  emit `${field_name}` — assume the field exists in the full form even if not in
-  KNOWN_FIELDS. If ambiguous which options trigger a skip, apply relevance to all
-  options logically grouped under the stated trigger.
+  `selected(${field}, 'code')`. When a relevance condition refers to a field from a
+  prior module, check KNOWN_FIELDS for the exact name and emit `${field_name}` —
+  assume the field exists in the full form even if not in KNOWN_FIELDS. If ambiguous
+  which options trigger a skip, apply relevance to all options logically grouped under
+  the stated trigger.
+
+  CRITICAL: Every field reference in a `relevance` expression MUST use XPath `${...}`
+  syntax. Bare field names are invalid SurveyCTO and will break the form.
+  - WRONG: `dd1 = '1'`, `mn_fr1 = 2`, `eligible = '1'`
+  - CORRECT: `${dd1} = '1'`, `${mn_fr1} = '2'`, `${eligible} = '1'`
+  This applies to every field reference anywhere in the expression, including nested
+  conditions, `and`/`or` chains, and `selected()` calls:
+  - WRONG: `selected(dr_h3_r1, filter)`
+  - CORRECT: `selected(${dr_h3_r1}, filter)`
+  Never emit a relevance string that contains a field name not wrapped in `${...}`.
+
+  **7b. Age and numeric entry fields.**
+  Any field that asks the respondent to state or record a numeric value (age, count,
+  quantity) is ALWAYS `integer` (or `decimal` if fractional), never `select_one`.
+  For age eligibility checks, use a direct value constraint on the `integer` field:
+  - `constraint`: `. >= {min} and . <= {max}` (e.g. `. >= 18 and . <= 50`)
+  - `constraint_message`: the eligibility failure message from source
+  Never use `select_one read_only` with date arithmetic (`today() - selected_date(.)`)
+  for age entry. Date-based age calculation is not valid for direct respondent input.
 
   **8. Eligibility / termination gating.**
   If the module's instructions say the interview should STOP under some condition,
@@ -238,14 +260,16 @@ system: |
   - `select_one` → `custom-baseline-select_one`
   - `select_multiple` → `custom-baseline-select_multiple`
   - `text` → `custom-baseline-text`
-  - `integer`  → `custom-baseline-integer`
+  - `integer` → `custom-baseline-integer`
   - `decimal` → `custom-baseline-decimal`
-  - `begin group` with co-located fields → `field-list`
-  - `calculate`, `image`, `begin group` (no field-list), `end group` → null
+  - `calculate`, `image`, `begin group`, `end group` → null
 
-  Use `field-list` on `begin group` when the source implies several fields belong on
-  one screen (e.g. name + gender + DOB cluster). Do not apply `field-list` by default.
-  Do not invent non-existent appearances.
+  CRITICAL: `field-list` on a `begin group` is ONLY permitted when the source document
+  explicitly places multiple fields on one screen — e.g. the source uses language like
+  "record in the same row", "fill in together", or lays out a grid of sub-fields for
+  one question (name + DOB + gender on a single line). Do NOT infer `field-list` from
+  question proximity alone. The default appearance for ALL `begin group` rows is null.
+  If in doubt, use null.
 
   **15. Calculated / scoring modules.**
   For modules explicitly described as derived/composite (not asked to respondent):
@@ -256,12 +280,12 @@ system: |
 
   **16. Interviewer-observation modules.**
   "Observe only, do not ask" modules with discrete options the interviewer actively
-  selects → use `select_one` / `select_multiple`, NOT `calculate`. Reserve `calculate`
-  strictly for genuinely derived/composite values.
+  selects → use `select_one {list_name}` / `select_multiple {list_name}`, NOT
+  `calculate`. Reserve `calculate` strictly for genuinely derived/composite values.
 
   **17. Group display (field-list).**
-  Apply `field-list` to a `begin group` only when the source indicates several fields
-  of one question belong on one screen. Each question otherwise gets its own screen.
+  See Rule 14 for `field-list` constraints. Each question gets its own screen by
+  default. Never apply `field-list` speculatively.
 
   **18. Module-naming and end-group convention.**
   See Rule 1. `end group` name is always null. If sub-modules exist, give each its own
@@ -297,7 +321,7 @@ system: |
   Rows 2 … R+1 — one `select_one` per rank slot, in order:
   - `type`: `select_one {list_name}`
   - `name`: `{question_code}_r{i}` where `i` is the 1-based rank index
-  - `labels`: `Rank {i}` for all languages; 
+  - `labels`: `Rank {i}` for all languages
   - `appearance`: `custom-baseline-select_one`
   - `required`: null
   - `choice_filter`: progressively excludes all prior rank fields:

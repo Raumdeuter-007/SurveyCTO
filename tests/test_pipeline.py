@@ -25,14 +25,14 @@ if __name__ == "__main__":
 
     docx_path = Path(debug_path)
     prompt_path = Path("prompts/parse_module.yaml")
-
+    lang = ['english', 'urdu']
     log.info("=== STAGE 1: SPLITTING ===")
     modules = split_document(docx_path)
     log.info(f"Found {len(modules)} module(s).")
 
     log.info("=== STAGE 2: PARSING ===")
-    outputs = parse_all_modules(modules, api_key, prompt_path, model='gemini-2.5-flash-lite', debug=True, languages=['english'])
+    outputs = parse_all_modules(modules, api_key, prompt_path, model='gemini-2.5-flash', languages=lang)
 
     log.info("=== STAGE 3: COMPILING ===")
-    out_path = compile_outputs(outputs, docx_path)
+    out_path = compile_outputs(outputs, docx_path, languages=lang)
     log.info(f"Done. Output written to: {out_path}")

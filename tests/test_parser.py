@@ -13,7 +13,7 @@ import io
 import os
 from pathlib import Path
 
-from pipeline.parser import parse_module, _load_prompt
+from pipeline.parser import _load_prompt_template, parse_module
 from pipeline.splitter import split_document
 from utils.logger import get_logger, setup_logging
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     log.info(f"Module text preview: {module.text[:200]}...")
 
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
-    system_prompt = _load_prompt(prompt_path)
+    system_prompt = _load_prompt_template(prompt_path)
 
     known_fields: list[str] = []
     choice_manifest: list[dict] = []
