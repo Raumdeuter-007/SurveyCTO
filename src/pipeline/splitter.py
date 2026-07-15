@@ -13,8 +13,7 @@ from docx import Document
 from docx.document import Document as DocumentType
 from docx.table import Table
 from docx.text.paragraph import Paragraph
-
-DELIMITER = "===MODULE==="
+from config.pipeline import MODULE_DELIMITER
 
 
 @dataclass
@@ -66,11 +65,11 @@ def split_document(docx_path: Path) -> list[RawModule]:
 
 
 def split_text(text: str) -> list[RawModule]:
-    parts = text.split(DELIMITER)
+    parts = text.split(MODULE_DELIMITER)
     module_parts = parts[1:]
 
     if not module_parts:
-        raise ValueError(f"No '{DELIMITER}' delimiter found in document.")
+        raise ValueError(f"No '{MODULE_DELIMITER}' delimiter found in document.")
 
     return [
         RawModule(index=i, text=_clean(part))

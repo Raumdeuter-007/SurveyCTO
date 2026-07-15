@@ -84,7 +84,11 @@ survey_start:
       urdu: "۔انتباہ: آپ کی ڈیوائس کی تاریخ/وقت غلط ہیں۔\n\nبراہ کرم 24 گھنٹے کے فارمیٹ پر سیٹ کریں ورنہ آپ flag ہو سکتے ہیں۔"
     appearance: custom-baseline-select_one
     relevance: "${cal_hour}<=7 or ${cal_hour}>=22"
-    required: "yes"
+    read_only: "yes"
+
+  - type: calculate_here
+    name: tt_start
+    calculation: "once(duration())"
 
   - type: select_one yn
     name: rsp_consent
@@ -95,42 +99,6 @@ survey_start:
     required: "yes"
 
 survey_end:
-  - type: note
-    name: n_end
-    labels:
-      english: "Thank You for your Time!"
-      urdu: "۔"
-
-  - type: select_one int_team
-    name: int_team
-    labels:
-      english: "Interviewer's Team"
-      urdu: "انٹرویور ٹیم منتخب کریں"
-    appearance: custom-baseline-select_one
-    required: "yes"
-
-  - type: select_one supervisor
-    name: supervisor
-    labels:
-      english: "Supervisor Name"
-      urdu: "سپروائزر منتخب کریں"
-    appearance: custom-baseline-select_one
-    required: "yes"
-    choice_filter: "filter=${int_team}"
-
-  - type: select_one int_name
-    name: int_name
-    labels:
-      english: "Interviewer's Name"
-      urdu: "انٹرویور کا نام منتخب کریں"
-    appearance: custom-baseline-select_one
-    required: "yes"
-    choice_filter: "filter=${supervisor} or filter=0"
-
-  - type: calculate
-    name: c_int_name
-    calculation: 'if(${int_name}=97 or ${int_name}="",${int_name_oth},${int_name})'
-
   - type: sensor_statistic pct_conversation
     name: s_pct_conversation
     labels:
