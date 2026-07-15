@@ -14,55 +14,15 @@ from typing import Any
 
 import yaml
 from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment
 from openpyxl.utils import get_column_letter
 
 from models.survey import ChoiceRow, ModuleOutput, SurveyRow
 from utils.logger import get_logger
+from config.compiler import (SETTINGS_HEADERS, SURVEY_WIDTHS, SURVEY_PREFIX_WIDTHS, 
+                             CHOICES_WIDTHS, CHOICES_PREFIX_WIDTHS, FIXED_ROWS_PATH
+                             ,_WRAP, _HEADER_FONT, _CELL_FONT)
 
 log = get_logger(__name__)
-
-SETTINGS_HEADERS = [
-    "form_title", "form_id", "version", "default_language",
-    "public_key", "submission_url",
-]
-
-_FIXED_ROWS_PATH = Path(__file__).parent.parent.parent / "prompts" / "fixed_rows.yaml"
-
-# ---------------------------------------------------------------------------
-# Column width maps (openpyxl character units, approx px/7)
-# ---------------------------------------------------------------------------
-
-_SURVEY_WIDTHS: dict[str, float] = {
-    "type":          34,
-    "name":          34,
-    "appearance":    50,
-    "relevance":     50,
-    "required":      50,
-    "constraint":    50,
-    "calculation":   36,
-    "choice_filter": 36,
-    "read only":     36,
-    "default":       36,
-    "repeat_count":  36,
-    "minimum_seconds": 36,
-    "publishable":   36,
-}
-_SURVEY_PREFIX_WIDTHS: dict[str, float] = {
-    "label:":              71,
-    "hint:":               50,
-    "constraint message:": 50,
-    "media:image:":        36,
-}
-
-_CHOICES_WIDTHS: dict[str, float] = {
-    "list_name": 19,
-    "value":     19,
-    "filter":    37,
-}
-_CHOICES_PREFIX_WIDTHS: dict[str, float] = {
-    "label:": 32,
-}
 
 
 def _col_width(header: str, fixed: dict[str, float], prefix: dict[str, float]) -> float:
@@ -78,7 +38,7 @@ def _col_width(header: str, fixed: dict[str, float], prefix: dict[str, float]) -
 # Fixed rows loader
 # ---------------------------------------------------------------------------
 
-def _load_fixed_rows(languages: list[str], path: Path = _FIXED_ROWS_PATH) -> dict:
+def _load_fixed_rows(languages: list[str], path: Path = FIXED_ROWS_PATH) -> dict:
     """
     Load fixed_rows.yaml and materialise SurveyRow / ChoiceRow objects,
     mapping stored language keys to the form's language list.
@@ -131,8 +91,6 @@ def _load_fixed_rows(languages: list[str], path: Path = _FIXED_ROWS_PATH) -> dic
 # ---------------------------------------------------------------------------
 
 def _resolve_survey_headers(
-    outputs: list[ModuleOutput],
-    fixed_start: list[SurveyRow],
     languages: list[str],
 ) -> list[str]:
     # Derive language-keyed columns from languages list directly (don't rely on
@@ -200,9 +158,6 @@ def _choice_row_to_list(row: ChoiceRow, headers: list[str]) -> list[str]:
 # Formatting helpers
 # ---------------------------------------------------------------------------
 
-_WRAP        = Alignment(wrap_text=True, vertical="top")
-_HEADER_FONT = Font(bold=True, name="Calibri")
-_CELL_FONT   = Font(name="Calibri")
 
 
 def _apply_sheet_formatting(
@@ -237,17 +192,15 @@ def _write_survey_sheet(
 
     for row in survey_start:
         ws.append(_survey_row_to_list(row, headers))
-    ws.append([""] * len(headers))
 
     for output in outputs:
         for row in output.survey_rows:
             ws.append(_survey_row_to_list(row, headers))
-    ws.append([""] * len(headers))
 
     for row in survey_end:
         ws.append(_survey_row_to_list(row, headers))
 
-    _apply_sheet_formatting(ws, headers, _SURVEY_WIDTHS, _SURVEY_PREFIX_WIDTHS)
+    _apply_sheet_formatting(ws, headers, SURVEY_WIDTHS, SURVEY_PREFIX_WIDTHS)
 
 
 def _deduplicate_choices(rows: list[ChoiceRow]) -> list[ChoiceRow]:
@@ -283,7 +236,7 @@ def _write_choices_sheet(
     if current_list is not None:
         ws.append([""] * len(headers))
 
-    _apply_sheet_formatting(ws, headers, _CHOICES_WIDTHS, _CHOICES_PREFIX_WIDTHS)
+    _apply_sheet_formatting(ws, headers, CHOICES_WIDTHS, CHOICES_PREFIX_WIDTHS)
 
 
 def _write_settings_sheet(ws) -> None:
@@ -304,7 +257,7 @@ def compile_outputs(
     docx_path: Path,
     languages: list[str],
     out_dir: Path | None = None,
-    fixed_rows_path: Path = _FIXED_ROWS_PATH,
+    fixed_rows_path: Path = FIXED_ROWS_PATH,
 ) -> Path:
     """
     Compile all ModuleOutputs into a SurveyCTO .xlsx file.
@@ -324,7 +277,7 @@ def compile_outputs(
 
     fixed = _load_fixed_rows(languages, fixed_rows_path)
 
-    survey_headers  = _resolve_survey_headers(outputs, fixed["survey_start"], languages)
+    survey_headers  = _resolve_survey_headers(languages)
     choices_headers = _resolve_choices_headers(languages)
 
     wb = Workbook()

@@ -25,13 +25,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from models.survey import ChoiceRow, ModuleOutput, SurveyRow
 from pipeline.splitter import RawModule
 from utils.logger import get_logger
+from config.pipeline import DEFAULT_MODEL, _JSON_FENCE_RE
 
 log = get_logger(__name__)
-
-DEFAULT_MODEL = "gemini-2.5-flash-lite"
-
-# Matches ```json ... ``` fence (case-insensitive, optional whitespace)
-_JSON_FENCE_RE = re.compile(r"```json\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
