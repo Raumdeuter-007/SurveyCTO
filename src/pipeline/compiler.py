@@ -95,10 +95,10 @@ def _resolve_survey_headers(
 ) -> list[str]:
     # Derive language-keyed columns from languages list directly (don't rely on
     # first row having all keys populated)
-    label_cols              = [f"label:{l}" for l in languages]
-    hint_cols               = [f"hint:{l}" for l in languages]
-    constraint_message_cols = [f"constraint message:{l}" for l in languages]
-    media_image_cols        = [f"media:image:{l}" for l in languages]
+    label_cols              = [f"label:{l.lower()}" for l in languages]
+    hint_cols               = [f"hint:{l.lower()}" for l in languages]
+    constraint_message_cols = [f"constraint message:{l.lower()}" for l in languages]
+    media_image_cols        = [f"media:image:{l.lower()}" for l in languages]
 
     return (
         ["type", "name"]

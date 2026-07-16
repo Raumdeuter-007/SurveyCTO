@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "customtkinter>=6.0.0",
+    "keyring>=25.7.0",
     "langchain-core>=1.4.8",
     "langchain-google-genai>=4.2.7",
     "openpyxl>=3.1.5",
