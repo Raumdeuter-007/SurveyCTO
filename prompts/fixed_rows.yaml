@@ -269,9 +269,3 @@ fixed_choices:
     labels:
       english: "Don't Know"
       urdu: "معلوم نہیں (پڑھ کر نہ سُنائیں)"
-
-  - list_name: "5"
-    value: 0
-    labels:
-      english: "."
-      urdu: "."

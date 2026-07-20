@@ -14,9 +14,9 @@ LLM response format (single JSON block):
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any
+from collections.abc import Callable
 
 import yaml
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -281,6 +281,7 @@ def parse_all_modules(
     languages: list[str],
     model: str = DEFAULT_MODEL,
     debug: bool = False,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> list[ModuleOutput]:
     """
     Loop over all modules, accumulating known_fields and choice_manifest
@@ -330,6 +331,8 @@ def parse_all_modules(
             log.debug("choice_manifest after module %d: %s", module.index, choice_manifest)
 
         outputs.append(output)
+        if on_progress is not None:
+            on_progress(len(outputs), len(modules))
 
     log.info(f"Parsed {len(outputs)}/{len(modules)} modules successfully.")
     return outputs
