@@ -26,9 +26,10 @@ from src.config.theme import Theme, LIGHT
 class _LanguageRow(ctk.CTkFrame):
     """A single language entry row with autocomplete + optional remove button."""
 
-    def __init__(self, parent, on_remove, theme: Theme, is_first: bool = False, **kwargs):
+    def __init__(self, parent, on_remove, on_change=None, theme: Theme = LIGHT, is_first: bool = False, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
         self._on_remove = on_remove
+        self._on_change = on_change
         self._t = theme
         self._suggestions: list[str] = []
         self._dropdown = None
@@ -121,6 +122,8 @@ class _LanguageRow(ctk.CTkFrame):
         text = self.entry.get()
         self._suggestions = self._matches(text)
         self._update_dropdown()
+        if self._on_change is not None:
+            self._on_change()
 
     def _update_dropdown(self):
         if not self._suggestions:
@@ -157,6 +160,7 @@ class _LanguageRow(ctk.CTkFrame):
             )
             self._outer.pack(fill="both", expand=True)
         else:
+            self._dropdown.configure(fg_color=self._t.BG)
             if self._outer:
                 self._outer.configure(
                     fg_color=self._t.BG,
@@ -208,9 +212,10 @@ class _LanguageRow(ctk.CTkFrame):
 class LanguageInputFrame(ctk.CTkFrame):
     """Container managing N _LanguageRow instances + an add button."""
 
-    def __init__(self, parent, theme: Theme = LIGHT, **kwargs):
+    def __init__(self, parent, theme: Theme = LIGHT, on_change=None, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
         self._t = theme
+        self._on_change = on_change  # Callable[[], None] | None
         self._rows: list[_LanguageRow] = []
 
         self._rows_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -240,11 +245,13 @@ class LanguageInputFrame(ctk.CTkFrame):
         row = _LanguageRow(
             self._rows_frame,
             on_remove=self._remove_row,
+            on_change=self._notify_change,
             theme=self._t,
             is_first=is_first,
         )
         row.pack(fill="x", pady=(0, 6))
         self._rows.append(row)
+        self._notify_change()
 
     def set_theme(self, theme: Theme) -> None:
         """Re-apply all widget colors. Call when the user switches appearance mode."""
@@ -258,6 +265,10 @@ class LanguageInputFrame(ctk.CTkFrame):
         )
         for row in self._rows:
             row.set_theme(theme)
+
+    def _notify_change(self) -> None:
+        if self._on_change is not None:
+            self._on_change()
 
     def get_languages(self) -> list[str]:
         """Return non-empty, de-duplicated (order-preserving) language list."""
@@ -277,6 +288,7 @@ class LanguageInputFrame(ctk.CTkFrame):
             return
         row.destroy()
         self._rows.remove(row)
+        self._notify_change()
 
 
 if __name__ == "__main__":

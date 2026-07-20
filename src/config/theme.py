@@ -31,6 +31,9 @@ class Theme:
     # -- Hover -------------------------------------------------------------
     BTN_HOVER: str  # hover state for FG-filled primary buttons
 
+    # -- Semantic ----------------------------------------------------------
+    DANGER: str     # error states, destructive actions
+
     # -- Borders -----------------------------------------------------------
     BORDER: str     # hairline borders on entries, buttons, dropdowns
 
@@ -51,6 +54,7 @@ LIGHT = Theme(
     ON_FG     = "#F5F4F0",
     ACCENT    = "#5A7A6B",
     BTN_HOVER = "#444441",
+    DANGER    = "#C0392B",
     BORDER    = "#D0CEC8",
     FONT      = ("Inter", 13),
     FONT_SM   = ("Inter", 12),
@@ -66,6 +70,7 @@ DARK = Theme(
     ON_FG     = "#1E1E1C",
     ACCENT    = "#6B9E8A",
     BTN_HOVER = "#C8C6C1",
+    DANGER    = "#E74C3C",
     BORDER    = "#3D3D3A",
     FONT      = ("Inter", 13),
     FONT_SM   = ("Inter", 12),

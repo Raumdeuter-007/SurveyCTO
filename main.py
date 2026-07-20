@@ -1,6 +1,4 @@
-def main():
-    print("Hello from automate!")
-
+from app import App
 
 if __name__ == "__main__":
-    main()
+    App().mainloop()

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from collections.abc import Callable
 
 import yaml
 from openpyxl import Workbook
@@ -95,10 +96,10 @@ def _resolve_survey_headers(
 ) -> list[str]:
     # Derive language-keyed columns from languages list directly (don't rely on
     # first row having all keys populated)
-    label_cols              = [f"label:{l.lower()}" for l in languages]
-    hint_cols               = [f"hint:{l.lower()}" for l in languages]
-    constraint_message_cols = [f"constraint message:{l.lower()}" for l in languages]
-    media_image_cols        = [f"media:image:{l.lower()}" for l in languages]
+    label_cols              = [f"label:{l}" for l in languages]
+    hint_cols               = [f"hint:{l}" for l in languages]
+    constraint_message_cols = [f"constraint message:{l}" for l in languages]
+    media_image_cols        = [f"media:image:{l}" for l in languages]
 
     return (
         ["type", "name"]
@@ -258,6 +259,7 @@ def compile_outputs(
     languages: list[str],
     out_dir: Path | None = None,
     fixed_rows_path: Path = FIXED_ROWS_PATH,
+    on_progress: Callable[[], None] | None = None,
 ) -> Path:
     """
     Compile all ModuleOutputs into a SurveyCTO .xlsx file.
@@ -298,4 +300,6 @@ def compile_outputs(
 
     wb.save(out_path)
     log.info(f"Compiled {len(outputs)} modules → {out_path}")
+    if on_progress is not None:
+        on_progress()
     return out_path
