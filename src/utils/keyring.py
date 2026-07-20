@@ -12,7 +12,7 @@ Install dependency: pip install keyring
 import keyring
 import keyring.errors
 
-_SERVICE_NAME = "surveyCTO_project"
+_SERVICE_NAME = "SurveyCTO Convertor"
 
 
 def get_secret(key_name: str) -> str | None:
