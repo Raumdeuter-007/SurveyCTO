@@ -29,8 +29,9 @@ from tkinter import filedialog
 
 import customtkinter as ctk
 
-from src.utils.keyring import get_secret, set_secret, has_secret
+from src.utils.keyring import delete_secret, get_secret, set_secret, has_secret
 from src.config.theme import DARK, LIGHT, Theme
+from src.config.pipeline import MODULE_DELIMITER
 from src.ui.controller import API_KEY_NAME, PipelineController
 from src.ui.language_input import LanguageInputFrame
 
@@ -51,14 +52,14 @@ class QueueLogHandler(logging.Handler):
 
 
 # ── window constraints ────────────────────────────────────────────────────────
-_MIN_W, _MIN_H = 560, 500
-_DEF_W, _DEF_H = 620, 740
+_MIN_W, _MIN_H = 500, 560
+_DEF_W, _DEF_H = 520, 600
 
 
 class _ApiKeyDialog(ctk.CTkToplevel):
     """Modal dialog prompting the user to enter their Google API key."""
 
-    def __init__(self, parent, theme: Theme) -> None:
+    def __init__(self, parent, theme: Theme, change: bool = False) -> None:
         super().__init__(parent)
         self._t = theme
         self.title("API Key Required")
@@ -67,6 +68,34 @@ class _ApiKeyDialog(ctk.CTkToplevel):
         self.configure(fg_color=theme.BG)
 
         pad = {"padx": 24, "pady": 10}
+
+        if not change:
+            ctk.CTkLabel(
+                self,
+                text="How to use this application",
+                font=(theme.FONT[0], 15, "bold"),
+                text_color=theme.FG,
+            ).pack(**pad, anchor="w")
+
+            instructions_text = (
+                f"1. Mark your modules via {MODULE_DELIMITER}. Write this at the\n    start and end of each module\n"
+                "2. Select the input file through Browse Button.\n"
+                "3. Add all the languages within the file.\n"
+                "4. Click 'Process' to initiate your request.\n\n"
+                "Need help? Contact support."
+            )
+            instruction_box = ctk.CTkTextbox(self, 
+                width=350, 
+                font=theme.FONT_SM,
+                fg_color=theme.SURFACE,
+                text_color=theme.FG_MUTED,
+                height=100, 
+                corner_radius=8, 
+                activate_scrollbars=False
+            )
+            instruction_box.insert("0.0", instructions_text)
+            instruction_box.configure(state="disabled")
+            instruction_box.pack(padx=20, pady=20)
 
         ctk.CTkLabel(
             self,
@@ -77,7 +106,7 @@ class _ApiKeyDialog(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             self,
-            text="Enter your Gemini API key. It will be stored\nsecurely in your OS keyring.",
+            text="Enter your Gemini API key. It will be stored securely in your\nOS keyring.",
             font=theme.FONT_SM,
             text_color=theme.FG_MUTED,
             justify="left",
@@ -196,6 +225,21 @@ class App(ctk.CTk):
         # Divider ────────────────────────────────────────────────────────────
         self._divider(pady=(0, 20))
 
+        self._config_btn = ctk.CTkButton(
+            header,
+            text="Change API Key",
+            width=90,
+            height=30,
+            fg_color="transparent",
+            hover_color=self._t.ENTRY_BG,
+            text_color=self._t.FG_MUTED,
+            border_width=1,
+            border_color=self._t.BORDER,
+            corner_radius=self._t.RADIUS,
+            font=self._t.FONT_SM,
+            command=self._change_api_key,
+        )
+        self._config_btn.pack(side="right", padx=(0, 20))
         # File selection ─────────────────────────────────────────────────────
         ctk.CTkLabel(
             self,
@@ -323,6 +367,15 @@ class App(ctk.CTk):
             self._set_status("⚠  No API key stored. Processing will fail.", error=True)
 
     # ── actions ───────────────────────────────────────────────────────────────
+
+    def _change_api_key(self):
+        dialog = _ApiKeyDialog(self, self._t, True)
+        self.wait_window(dialog)
+        if dialog.result:
+            delete_secret(API_KEY_NAME)
+            set_secret(API_KEY_NAME, dialog.result)
+            self._set_status("")
+       
 
     def _browse(self) -> None:
         path = filedialog.askopenfilename(
@@ -456,6 +509,10 @@ class App(ctk.CTk):
     def _apply_theme(self, t: Theme) -> None:
         self.configure(fg_color=t.BG)
         self._theme_btn.configure(
+            hover_color=t.ENTRY_BG, text_color=t.FG_MUTED,
+            border_color=t.BORDER,
+        )
+        self._config_btn.configure(
             hover_color=t.ENTRY_BG, text_color=t.FG_MUTED,
             border_color=t.BORDER,
         )
