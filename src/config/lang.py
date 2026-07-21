@@ -32,4 +32,7 @@ KNOWN_LANGUAGES: list[str] = [
     "burmese",
     "vietnamese",
     "tagalog",
+    "pashto",
+    "sindhi",
+    "punjabi",
 ]
