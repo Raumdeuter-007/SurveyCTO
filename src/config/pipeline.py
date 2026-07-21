@@ -5,11 +5,10 @@ Pipeline constants: model, paths, and delimiters.
 from __future__ import annotations
 
 from pathlib import Path
+from src.config.compiler import PROJECT_ROOT
 import re
 
-PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
-
-DEFAULT_MODEL:    str  = "gemini-2.5-flash-lite"
+DEFAULT_MODEL:    str  = "gemini-2.5-flash"
 MODULE_DELIMITER: str  = "===MODULE==="
 PROMPT_PATH:      Path = PROJECT_ROOT / "prompts" / "parse_module.yaml"
 

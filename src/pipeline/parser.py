@@ -299,7 +299,11 @@ def parse_all_modules(
     Returns:
         List of ModuleOutput in module order (failed modules omitted).
     """
-    llm = ChatGoogleGenerativeAI(model=model, google_api_key=api_key)
+    llm = ChatGoogleGenerativeAI(
+        model=model, 
+        temperature=0.5,
+        google_api_key=api_key
+    )
     prompt_template = _load_prompt_template(prompt_path)
     primary_language = languages[0]
 

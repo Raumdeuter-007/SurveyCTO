@@ -3,6 +3,7 @@ Compiler constants: sheet headers and column widths.
 """
 
 from __future__ import annotations
+import sys
 from pathlib import Path
 
 from openpyxl.styles import Alignment, Font
@@ -13,7 +14,14 @@ SETTINGS_HEADERS = [
     "public_key", "submission_url",
 ]
 
-PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT: Path = Path()
+if getattr(sys, 'frozen', False):
+    # Running inside PyInstaller bundle
+    PROJECT_ROOT = Path(sys.executable).parent
+else:
+    # Running normally
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
 FIXED_ROWS_PATH:  Path = PROJECT_ROOT / "prompts" / "fixed_rows.yaml"
 
 _WRAP        = Alignment(wrap_text=True, vertical="top")

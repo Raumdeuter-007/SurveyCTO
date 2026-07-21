@@ -29,6 +29,7 @@ from tkinter import filedialog
 
 import customtkinter as ctk
 
+from src.config.compiler import PROJECT_ROOT
 from src.utils.keyring import delete_secret, get_secret, set_secret, has_secret
 from src.config.theme import DARK, LIGHT, Theme
 from src.config.pipeline import MODULE_DELIMITER
@@ -176,6 +177,7 @@ class App(ctk.CTk):
         ctk.set_default_color_theme("green")
 
         self.title("Survey → SurveyCTO")
+        self.iconbitmap(PROJECT_ROOT / "assets" / "icon.ico")
         self.geometry(f"{_DEF_W}x{_DEF_H}")
         self.minsize(_MIN_W, _MIN_H)
         self.configure(fg_color=self._t.BG)
