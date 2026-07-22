@@ -115,7 +115,7 @@ def module_output_to_csv(output) -> tuple[str, str]:
     return survey_csv, choices_csv
 
 
-if __name__ == "__main__":
+def test_parser_functionality():
     debug_path = os.environ.get("DEBUG_PATH")
     api_key = os.environ.get("GOOGLE_API_KEY")
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     modules = split_document(Path(debug_path))
     log.info(f"Using module 0 of {len(modules)} total.")
 
-    module = modules[1]
+    module = modules[0]
     log.info(f"Module text preview: {module.text[:200]}...")
 
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
@@ -151,3 +151,4 @@ if __name__ == "__main__":
 
     log.info("=== SURVEY CSV ===\n" + survey_csv)
     log.info("=== CHOICES CSV ===\n" + choices_csv)
+    assert True

@@ -14,7 +14,7 @@ from utils.logger import get_logger, setup_logging
 setup_logging(log_file=Path("app.log"))
 log = get_logger("debug_pipeline")
 
-if __name__ == "__main__":
+def test_pipeline_functionality():
     debug_path = os.environ.get("DEBUG_PATH")
     api_key = os.environ.get("GOOGLE_API_KEY")
 
