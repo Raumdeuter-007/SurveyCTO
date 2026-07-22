@@ -3,7 +3,7 @@ from pipeline.splitter import split_document
 from utils.logger import get_logger, setup_logging
 import os
 
-if __name__ == "__main__":
+def test_splitter_functionality():
     setup_logging(log_file=Path("app.log"))
     log = get_logger("debug_split")
 
