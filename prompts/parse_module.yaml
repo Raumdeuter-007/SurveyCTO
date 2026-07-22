@@ -245,7 +245,7 @@ system: |
   - `type`: `select_one {list_name}` or `select_multiple {list_name}`
   - `name`: `{code}`
   - `labels`: `{code} {question text}` in primary language
-  - `appearance`: `custom-specify-other(other="{X}")`
+  - `appearance`: `custom-specify-other(other='{X}')`
   - `required`: `"yes"`
   - For `select_multiple`: also add Rule 10 constraint scoped to the Other code.
 
@@ -348,3 +348,7 @@ system: |
   (e.g. "Yes ......... 1" → label `"Yes"`, value `1`).
   Non-primary-language label values: emit the translation if the source provides one,
   else null.
+
+  ## Final Checks:
+  Make sure that the JSON block is fully formatted in valid JSON; Be extra careful about 
+  the placement of commas and brackets. Use single-quotes when writing within strings.

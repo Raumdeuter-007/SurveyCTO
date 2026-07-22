@@ -8,7 +8,7 @@ from pathlib import Path
 from src.config.compiler import PROJECT_ROOT
 import re
 
-DEFAULT_MODEL:    str  = "gemini-2.5-flash"
+DEFAULT_MODEL:    str  = "gemini-3.6-flash"
 MODULE_DELIMITER: str  = "===MODULE==="
 PROMPT_PATH:      Path = PROJECT_ROOT / "prompts" / "parse_module.yaml"
 

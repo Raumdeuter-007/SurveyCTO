@@ -105,7 +105,7 @@ def module_output_to_csv(output) -> tuple[str, str]:
         writer_c = csv.DictWriter(choices_buf, fieldnames=headers_c, quoting=csv.QUOTE_ALL)
         writer_c.writeheader()
         for row in output.choice_rows:
-            d = {"list_name": row.list_name, "name": row.name}
+            d = {"list_name": row.list_name, "value": row.value}
             d.update(row.labels)
             writer_c.writerow(d)
         choices_csv = choices_buf.getvalue()
@@ -146,6 +146,7 @@ def test_parser_functionality():
         known_fields=known_fields, 
         choice_manifest=choice_manifest
     )
+    log.info(output)
 
     survey_csv, choices_csv = module_output_to_csv(output)
 

@@ -82,7 +82,7 @@ def _extract_json(response: str) -> dict:
     else:
         log.warning("No ```json fence found — attempting bare JSON parse.")
         candidate = response.strip()
-
+    candidate = candidate.replace('\\n', '\n').replace("\\'", "'")
     try:
         return json.loads(candidate)
     except json.JSONDecodeError as e:
@@ -324,6 +324,8 @@ def parse_all_modules(
             )
         except Exception as e:
             log.error(f"Module {module.index} failed — skipping. Reason: {e}")
+            if on_progress is not None:
+                on_progress(len(outputs), len(modules))
             continue
 
         # Accumulate only on success

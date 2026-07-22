@@ -252,6 +252,18 @@ fixed_choices:
       english: "."
       urdu: "."
 
+  - list_name: yn
+    value: 1
+    labels:
+      english: "Yes"
+      urdu: "ہاں"
+
+  - list_name: yn
+    value: 2
+    labels:
+      english: "No"
+      urdu: "نہیں"
+
   - list_name: yn1
     value: 1
     labels:
